@@ -1,3 +1,4 @@
+// Best Practices: https://github.com/tbillington/bevy_best_practices
 use bevy::{
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
