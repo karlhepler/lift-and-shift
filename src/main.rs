@@ -2,6 +2,8 @@
 use bevy::{
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    window::PrimaryWindow,
+    input::common_conditions::*,
 };
 
 fn main() {
@@ -17,6 +19,7 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, setup)
+        .add_systems(Update, mouse_click.run_if(input_just_pressed(MouseButton::Left)))
         .run();
 }
 
@@ -74,4 +77,16 @@ fn setup(
             Some(Transform::from_xyz(x_pos, y_pos, 0.)),
         ));
     }
+}
+
+fn mouse_click(
+    windows: Query<&Window, With<PrimaryWindow>>,
+) {
+    let position = windows.single().cursor_position();
+    if position.is_none() {
+        return;
+    }
+    let position = position.unwrap();
+
+    println!("Cursor Position: {:?}", position);
 }
