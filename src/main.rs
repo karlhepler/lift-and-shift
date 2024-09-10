@@ -64,6 +64,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    // TODO: What about different sized tiles on the same grid?
     commands.spawn(Camera2dBundle::default());
 
     let num_cols = 3;
