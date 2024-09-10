@@ -65,6 +65,7 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     // TODO: What about different sized tiles on the same grid?
+    // TODO: What about tiles that are combined randomly... almost like tetris?
     commands.spawn(Camera2dBundle::default());
 
     let num_cols = 3;
