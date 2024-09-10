@@ -33,15 +33,19 @@ impl TileBundle {
     pub fn new(
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<ColorMaterial>>,
+        color: Option<Color>,
+        transform: Option<Transform>,
     ) -> Self {
+        let color = color.unwrap_or(Color::default());
+        let transform = transform.unwrap_or(Transform::default());
         let mesh = Mesh2dHandle(meshes.add(Rectangle::new(100., 100.)));
-        let material = materials.add(Color::linear_rgb(255., 255., 255.));
 
         Self {
             marker: Tile,
             sprite: MaterialMesh2dBundle{
                 mesh,
-                material,
+                material: materials.add(color),
+                transform,
                 ..default()
             },
         }
@@ -55,16 +59,19 @@ fn setup(
 ) {
     commands.spawn(Camera2dBundle::default());
 
-    let padding = 10.;
+    let tile_padding = 10.;
     let num_tiles = 9;
     for i in 0..num_tiles {
         let row = (i / 3) as f32;
         let col = (i % 3) as f32;
-        let x_pos = (col - 1.) * (100. + padding);
-        let y_pos = (1. - row) * (100. + padding);
+        let x_pos = (col - 1.) * (100. + tile_padding);
+        let y_pos = (1. - row) * (100. + tile_padding);
 
-        commands
-            .spawn(TileBundle::new(&mut meshes, &mut materials))
-            .insert(Transform::from_xyz(x_pos, y_pos, 0.));
+        commands.spawn(TileBundle::new(
+            &mut meshes,
+            &mut materials,
+            Some(Color::hsl(360. * i as f32 / num_tiles as f32, 0.95, 0.7)),
+            Some(Transform::from_xyz(x_pos, y_pos, 0.)),
+        ));
     }
 }
