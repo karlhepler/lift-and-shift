@@ -48,9 +48,11 @@ fn main() {
 
 fn print_tile_touched(
     mut evt_tiletouched: EventReader<TileTouchedEvent>,
+    mut commands: Commands,
 ) {
     for evt in evt_tiletouched.read() {
-        eprintln!("Tile Touched: {:?}", evt.0);
+        eprintln!("Goodbye Tile: {:?}", evt.0);
+        commands.entity(evt.0).despawn();
     }
 }
 
