@@ -10,6 +10,18 @@ const TILE_WIDTH: f32 = 100.;
 const TILE_HEIGHT: f32 = 100.;
 const TILE_MARGIN: f32 = 10.;
 
+#[derive(Component)]
+pub struct Tile;
+
+#[derive(Bundle)]
+pub struct TileBundle {
+    marker: Tile,
+    sprite: MaterialMesh2dBundle<ColorMaterial>,
+}
+
+#[derive(Event)]
+struct TileTouchedEvent(Entity);
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -23,18 +35,23 @@ fn main() {
             ..default()
         }))
         .add_plugins(TrackCursorPlugin)
+        .add_event::<TileTouchedEvent>()
         .add_systems(Startup, setup)
-        .add_systems(Update, mouse_click.run_if(input_just_pressed(MouseButton::Left)))
+        .add_systems(Update, (
+            mouse_click.run_if(input_just_pressed(MouseButton::Left)),
+            (
+                print_tile_touched,
+            ),
+        ).chain())
         .run();
 }
 
-#[derive(Component)]
-pub struct Tile;
-
-#[derive(Bundle)]
-pub struct TileBundle {
-    marker: Tile,
-    sprite: MaterialMesh2dBundle<ColorMaterial>,
+fn print_tile_touched(
+    mut evt_tiletouched: EventReader<TileTouchedEvent>,
+) {
+    for evt in evt_tiletouched.read() {
+        eprintln!("Tile Touched: {:?}", evt.0);
+    }
 }
 
 impl TileBundle {
@@ -103,7 +120,8 @@ fn setup(
 
 fn mouse_click(
     cursor: Res<CursorLocation>,
-    tiles: Query<&Transform, With<Tile>>,
+    tiles: Query<(Entity, &Transform), With<Tile>>,
+    mut evt_tiletouched: EventWriter<TileTouchedEvent>,
 ) {
     let cursor = cursor.get();
     if cursor.is_none() {
@@ -111,8 +129,6 @@ fn mouse_click(
     }
     let cursor = cursor.unwrap();
     let cursor_pos = cursor.world_position;
-
-    println!("\nCursor Position: {:?}", cursor_pos);
 
     let half_tile_width = TILE_WIDTH/2.;
     let half_tile_height = TILE_HEIGHT/2.;
@@ -124,9 +140,9 @@ fn mouse_click(
         (tile_pos.y + half_tile_height) > cursor_pos.y
     };
 
-    for transform in tiles.iter() {
+    for (entity, transform) in tiles.iter() {
         if cursor_touching(transform.translation) {
-            println!("Tile Position: {:?}", transform.translation);
+            evt_tiletouched.send(TileTouchedEvent(entity));
             return;
         }
     }
