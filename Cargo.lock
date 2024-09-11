@@ -489,6 +489,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_cursor"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9beb050b044fb0676996d587da012bc06efbb82a6365ac6936d210d1c00a27d3"
+dependencies = [
+ "bevy",
+ "smallvec",
+]
+
+[[package]]
 name = "bevy_derive"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2296,6 +2306,7 @@ name = "lift-and-shift"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_cursor",
  "log",
 ]
 

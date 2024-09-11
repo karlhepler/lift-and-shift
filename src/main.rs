@@ -2,9 +2,9 @@
 use bevy::{
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
-    window::PrimaryWindow,
     input::common_conditions::*,
 };
+use bevy_cursor::prelude::*;
 
 const TILE_WIDTH: f32 = 100.;
 const TILE_HEIGHT: f32 = 100.;
@@ -22,6 +22,7 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(TrackCursorPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, mouse_click.run_if(input_just_pressed(MouseButton::Left)))
         .run();
@@ -101,13 +102,32 @@ fn setup(
 }
 
 fn mouse_click(
-    windows: Query<&Window, With<PrimaryWindow>>,
+    cursor: Res<CursorLocation>,
+    tiles: Query<&Transform, With<Tile>>,
 ) {
-    let position = windows.single().cursor_position();
-    if position.is_none() {
+    let cursor = cursor.get();
+    if cursor.is_none() {
         return;
     }
-    let position = position.unwrap();
+    let cursor = cursor.unwrap();
+    let cursor_pos = cursor.world_position;
 
-    println!("Cursor Position: {:?}", position);
+    println!("\nCursor Position: {:?}", cursor_pos);
+
+    let half_tile_width = TILE_WIDTH/2.;
+    let half_tile_height = TILE_HEIGHT/2.;
+
+    let cursor_touching = |tile_pos: Vec3| -> bool {
+        (tile_pos.x - half_tile_width) < cursor_pos.x &&
+        (tile_pos.x + half_tile_width) > cursor_pos.x && 
+        (tile_pos.y - half_tile_height) < cursor_pos.y &&    
+        (tile_pos.y + half_tile_height) > cursor_pos.y
+    };
+
+    for transform in tiles.iter() {
+        if cursor_touching(transform.translation) {
+            println!("Tile Position: {:?}", transform.translation);
+            return;
+        }
+    }
 }
