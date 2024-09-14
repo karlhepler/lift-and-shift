@@ -44,19 +44,42 @@ fn main() {
         .add_systems(Update, (
             mouse_click.run_if(input_just_pressed(MouseButton::Left)),
             (
-                print_tile_touched,
+                despawn_tile,
+                print_goodbye_tile,
+                pop_sound,
             ),
         ).chain())
         .run();
 }
 
-fn print_tile_touched(
+fn print_goodbye_tile(
+    mut evt_tiletouched: EventReader<TileTouchedEvent>,
+) {
+    for evt in evt_tiletouched.read() {
+        eprintln!("Goodbye Tile: {:?}", evt.0);
+    }
+}
+
+fn despawn_tile(
     mut evt_tiletouched: EventReader<TileTouchedEvent>,
     mut commands: Commands,
 ) {
     for evt in evt_tiletouched.read() {
-        eprintln!("Goodbye Tile: {:?}", evt.0);
         commands.entity(evt.0).despawn();
+    }
+}
+
+fn pop_sound(
+    mut evt_tiletouched: EventReader<TileTouchedEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    for _ in evt_tiletouched.read() {
+        commands.spawn(AudioBundle {
+            source: asset_server.load("audio/pop.ogg"),
+            settings: PlaybackSettings::DESPAWN,
+            ..default()
+        });
     }
 }
 
@@ -136,8 +159,6 @@ fn mouse_click(
     cursor: Res<CursorLocation>,
     tiles: Query<(Entity, &Transform), With<Tile>>,
     mut evt_tiletouched: EventWriter<TileTouchedEvent>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
 ) {
     let cursor = cursor.get();
     if cursor.is_none() {
@@ -159,11 +180,6 @@ fn mouse_click(
     for (entity, transform) in tiles.iter() {
         if cursor_touching(transform.translation) {
             evt_tiletouched.send(TileTouchedEvent(entity));
-            commands.spawn(AudioBundle {
-                source: asset_server.load("audio/pop.ogg"),
-                settings: PlaybackSettings::DESPAWN,
-                ..default()
-            });
             return;
         }
     }
