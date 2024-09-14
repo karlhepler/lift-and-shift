@@ -136,6 +136,8 @@ fn mouse_click(
     cursor: Res<CursorLocation>,
     tiles: Query<(Entity, &Transform), With<Tile>>,
     mut evt_tiletouched: EventWriter<TileTouchedEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
 ) {
     let cursor = cursor.get();
     if cursor.is_none() {
@@ -157,6 +159,11 @@ fn mouse_click(
     for (entity, transform) in tiles.iter() {
         if cursor_touching(transform.translation) {
             evt_tiletouched.send(TileTouchedEvent(entity));
+            commands.spawn(AudioBundle {
+                source: asset_server.load("audio/pop.ogg"),
+                settings: PlaybackSettings::DESPAWN,
+                ..default()
+            });
             return;
         }
     }
