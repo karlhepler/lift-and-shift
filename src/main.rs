@@ -6,9 +6,13 @@ use bevy::{
 };
 use bevy_cursor::prelude::*;
 
+const WINDOW_WIDTH: f32 = 1179./2.5; // reduced resolution for iphone 14 pro
+const WINDOW_HEIGHT: f32 = 2556./2.5; // reduced resolution for iphone 14 pro
 const TILE_WIDTH: f32 = 100.;
 const TILE_HEIGHT: f32 = 100.;
 const TILE_MARGIN: f32 = 10.;
+const MAX_NUM_COLS: i32 = (WINDOW_WIDTH / (TILE_WIDTH + TILE_MARGIN)) as i32;
+const MAX_NUM_ROWS: i32 = (WINDOW_HEIGHT / (TILE_HEIGHT + TILE_MARGIN)) as i32;
 
 #[derive(Component)]
 pub struct Tile;
@@ -28,7 +32,7 @@ fn main() {
             primary_window: Some(Window {
                 title: "Lift and Shift".to_string(),
                 // reduced resolution for iphone 14 pro
-                resolution: (1179./2.5, 2556./2.5).into(),
+                resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
                 resizable: false,
                 ..default()
             }),
@@ -88,21 +92,29 @@ fn setup(
     // TODO: What about tiles that are combined randomly... almost like tetris?
     commands.spawn(Camera2dBundle::default());
 
-    let num_cols = 3;
-    let num_rows = 3;
-    let num_tiles = num_cols + num_rows;
+    let num_cols = MAX_NUM_COLS;
+    let num_rows = MAX_NUM_ROWS;
+    let num_tiles = num_cols * num_rows;
+
+    if num_cols > MAX_NUM_COLS {
+        println!("too many columns");
+    }
+    if num_rows > MAX_NUM_ROWS {
+        println!("too many rows");
+    }
 
     let offset_x = num_cols as f32 / 2. - 0.5;
-    let offset_y = num_rows as f32 / 2. - 0.5;
-
     let get_x_pos = | col: f32 | -> f32 {
         return (col - offset_x) * (TILE_WIDTH + TILE_MARGIN);
     };
+
+    let offset_y = num_rows as f32 / 2. - 0.5;
     let get_y_pos = | row: f32 | -> f32 {
         return (offset_y - row) * (TILE_HEIGHT + TILE_MARGIN);
     };
+
     let get_hue = | row: f32, col: f32 | -> f32 {
-        return 360. * (row + col) / num_tiles as f32;
+        return 720. * (row + col) / num_tiles as f32;
     };
 
     for row in 0..num_rows {
