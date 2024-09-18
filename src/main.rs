@@ -42,7 +42,10 @@ fn main() {
         .add_event::<TileTouchedEvent>()
         .add_systems(Startup, setup)
         .add_systems(Update, (
-            mouse_click.run_if(input_just_pressed(MouseButton::Left)),
+            (
+                mouse_click.run_if(input_just_pressed(MouseButton::Left)),
+                key_press,
+            ),
             (
                 despawn_tile,
                 print_goodbye_tile,
@@ -115,8 +118,8 @@ fn setup(
     // TODO: What about tiles that are combined randomly... almost like tetris?
     commands.spawn(Camera2dBundle::default());
 
-    let num_cols = MAX_NUM_COLS;
-    let num_rows = MAX_NUM_ROWS;
+    let num_cols = 3;
+    let num_rows = 3;
     let num_tiles = num_cols * num_rows;
 
     if num_cols > MAX_NUM_COLS {
@@ -152,6 +155,30 @@ fn setup(
                 Some(Transform::from_xyz(x_pos, y_pos, 0.)),
             ));
         }
+    }
+}
+
+fn key_press(
+    keys: Res<ButtonInput<KeyCode>>,
+) {
+    if keys.just_pressed(KeyCode::ArrowUp) {
+        println!("arrow up");
+        return;
+    }
+
+    if keys.just_pressed(KeyCode::ArrowRight) {
+        println!("arrow right");
+        return;
+    }
+
+    if keys.just_pressed(KeyCode::ArrowDown) {
+        println!("arrow down");
+        return;
+    }
+
+    if keys.just_pressed(KeyCode::ArrowLeft) {
+        println!("arrow left");
+        return;
     }
 }
 
