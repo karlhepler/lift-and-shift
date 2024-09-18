@@ -11,16 +11,24 @@ const WINDOW_HEIGHT: f32 = 2556./2.5; // reduced resolution for iphone 14 pro
 const TILE_WIDTH: f32 = 100.;
 const TILE_HEIGHT: f32 = 100.;
 const TILE_MARGIN: f32 = 10.;
-const MAX_NUM_COLS: i32 = (WINDOW_WIDTH / (TILE_WIDTH + TILE_MARGIN)) as i32;
-const MAX_NUM_ROWS: i32 = (WINDOW_HEIGHT / (TILE_HEIGHT + TILE_MARGIN)) as i32;
+const MAX_NUM_COLS: usize = (WINDOW_WIDTH / (TILE_WIDTH + TILE_MARGIN)) as usize;
+const MAX_NUM_ROWS: usize = (WINDOW_HEIGHT / (TILE_HEIGHT + TILE_MARGIN)) as usize;
 
 #[derive(Component)]
 pub struct Tile;
+
+#[derive(Component)]
+pub struct Row(usize);
+
+#[derive(Component)]
+pub struct Col(usize);
 
 #[derive(Bundle)]
 pub struct TileBundle {
     marker: Tile,
     sprite: MaterialMesh2dBundle<ColorMaterial>,
+    row: Row,
+    col: Col,
 }
 
 #[derive(Event)]
@@ -92,6 +100,8 @@ impl TileBundle {
         materials: &mut ResMut<Assets<ColorMaterial>>,
         color: Option<Color>,
         transform: Option<Transform>,
+        row: usize,
+        col: usize,
     ) -> Self {
         let color = color.unwrap_or(Color::default());
         let transform = transform.unwrap_or(Transform::default());
@@ -105,6 +115,8 @@ impl TileBundle {
                 transform,
                 ..default()
             },
+            row: Row(row),
+            col: Col(col),
         }
     }
 }
@@ -118,8 +130,8 @@ fn setup(
     // TODO: What about tiles that are combined randomly... almost like tetris?
     commands.spawn(Camera2dBundle::default());
 
-    let num_cols = 3;
-    let num_rows = 3;
+    let num_cols: usize = 3;
+    let num_rows: usize = 3;
     let num_tiles = num_cols * num_rows;
 
     if num_cols > MAX_NUM_COLS {
@@ -153,6 +165,8 @@ fn setup(
                 &mut materials,
                 Some(Color::hsl(get_hue(row as f32, col as f32), 0.95, 0.7)),
                 Some(Transform::from_xyz(x_pos, y_pos, 0.)),
+                row,
+                col,
             ));
         }
     }
@@ -160,24 +174,41 @@ fn setup(
 
 fn key_press(
     keys: Res<ButtonInput<KeyCode>>,
+    mut tiles: Query<(&mut Row, &mut Col), With<Tile>>,
 ) {
     if keys.just_pressed(KeyCode::ArrowUp) {
         println!("arrow up");
+        for (mut row, col) in tiles.iter_mut() {
+            row.0 = row.0.saturating_sub(1);
+            println!("({:?}, {:?})", col.0, row.0);
+        }
         return;
     }
 
     if keys.just_pressed(KeyCode::ArrowRight) {
         println!("arrow right");
+        for (row, mut col) in tiles.iter_mut() {
+            col.0 = col.0.saturating_add(1);
+            println!("({:?}, {:?})", col.0, row.0);
+        }
         return;
     }
 
     if keys.just_pressed(KeyCode::ArrowDown) {
         println!("arrow down");
+        for (mut row, col) in tiles.iter_mut() {
+            row.0 = row.0.saturating_add(1);
+            println!("({:?}, {:?})", col.0, row.0);
+        }
         return;
     }
 
     if keys.just_pressed(KeyCode::ArrowLeft) {
         println!("arrow left");
+        for (row, mut col) in tiles.iter_mut() {
+            col.0 = col.0.saturating_sub(1);
+            println!("({:?}, {:?})", col.0, row.0);
+        }
         return;
     }
 }
