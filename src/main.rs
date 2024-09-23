@@ -34,6 +34,14 @@ pub struct TileBundle {
 #[derive(Event)]
 struct TileTouchedEvent(Entity);
 
+#[derive(Event)]
+enum TileShiftEvent {
+    Up,
+    Right,
+    Down,
+    Left,
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -48,6 +56,7 @@ fn main() {
         }))
         .add_plugins(TrackCursorPlugin)
         .add_event::<TileTouchedEvent>()
+        .add_event::<TileShiftEvent>()
         .add_systems(Startup, setup)
         .add_systems(Update, (
             (
@@ -58,9 +67,23 @@ fn main() {
                 despawn_tile,
                 print_goodbye_tile,
                 pop_sound,
+                print_shift_direction,
             ),
         ).chain())
         .run();
+}
+
+fn print_shift_direction(
+    mut evt_tileshift: EventReader<TileShiftEvent>,
+) {
+    for event in evt_tileshift.read() {
+        match event {
+            TileShiftEvent::Up => { println!("shift up") }
+            TileShiftEvent::Right => { println!("shift right") }
+            TileShiftEvent::Down => { println!("shift down") }
+            TileShiftEvent::Left => { println!("shift left") }
+        }
+    }
 }
 
 fn print_goodbye_tile(
@@ -174,42 +197,16 @@ fn setup(
 
 fn key_press(
     keys: Res<ButtonInput<KeyCode>>,
-    mut tiles: Query<(&mut Row, &mut Col), With<Tile>>,
+    mut evt_tileshift: EventWriter<TileShiftEvent>,
 ) {
     if keys.just_pressed(KeyCode::ArrowUp) {
-        println!("arrow up");
-        for (mut row, col) in tiles.iter_mut() {
-            row.0 = row.0.saturating_sub(1);
-            println!("({:?}, {:?})", col.0, row.0);
-        }
-        return;
-    }
-
-    if keys.just_pressed(KeyCode::ArrowRight) {
-        println!("arrow right");
-        for (row, mut col) in tiles.iter_mut() {
-            col.0 = col.0.saturating_add(1);
-            println!("({:?}, {:?})", col.0, row.0);
-        }
-        return;
-    }
-
-    if keys.just_pressed(KeyCode::ArrowDown) {
-        println!("arrow down");
-        for (mut row, col) in tiles.iter_mut() {
-            row.0 = row.0.saturating_add(1);
-            println!("({:?}, {:?})", col.0, row.0);
-        }
-        return;
-    }
-
-    if keys.just_pressed(KeyCode::ArrowLeft) {
-        println!("arrow left");
-        for (row, mut col) in tiles.iter_mut() {
-            col.0 = col.0.saturating_sub(1);
-            println!("({:?}, {:?})", col.0, row.0);
-        }
-        return;
+        evt_tileshift.send(TileShiftEvent::Up);
+    } else if keys.just_pressed(KeyCode::ArrowRight) {
+        evt_tileshift.send(TileShiftEvent::Right);
+    } else if keys.just_pressed(KeyCode::ArrowDown) {
+        evt_tileshift.send(TileShiftEvent::Down);
+    } else if keys.just_pressed(KeyCode::ArrowLeft) {
+        evt_tileshift.send(TileShiftEvent::Left);
     }
 }
 
