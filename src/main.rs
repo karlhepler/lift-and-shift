@@ -89,5 +89,6 @@ fn main() {
 fn startup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
+    // https://bevyengine.org/news/bevy-0-14/#component-lifecycle-hooks
     commands.spawn(TileBoardBundle::new(3, 3, 100., 100., 10.).unwrap());
 }
