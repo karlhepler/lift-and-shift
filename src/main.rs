@@ -1,18 +1,48 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    ecs::component::{ComponentHooks, StorageType},
+};
+use itertools::iproduct;
 
 // Constants -------------------------------------------------------------------
 const WINDOW_WIDTH: f32 = 1179./2.5; // reduced resolution for iphone 14 pro
 const WINDOW_HEIGHT: f32 = 2556./2.5; // reduced resolution for iphone 14 pro
 
 // Components ------------------------------------------------------------------
-#[derive(Component)]
+#[derive(Debug)]
 struct TileBoard;
+impl Component for TileBoard {
+    const STORAGE_TYPE: StorageType = StorageType::Table;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.on_insert(|mut world, entity, _component_id| {
+            let num_rows = world.get::<NumTileBoardRows>(entity).unwrap().0;
+            let num_cols = world.get::<NumTileBoardCols>(entity).unwrap().0;
+            let tile_width = world.get::<TileWidth>(entity).unwrap().0;
+            let tile_height = world.get::<TileHeight>(entity).unwrap().0;
+            let tile_margin = world.get::<TileMargin>(entity).unwrap().0;
+            world.commands().entity(entity)
+                .with_children(|parent| {
+                    for (col, row) in iproduct!(0..num_cols, 0..num_rows) {
+                        parent.spawn(TileBundle{
+                            marker: Tile,
+                            row: TileBoardRow(row),
+                            col: TileBoardCol(col),
+                            width: TileWidth(tile_width),
+                            height: TileHeight(tile_height),
+                            margin: TileMargin(tile_margin),
+                        });
+                    }
+                });
+        });
+    }
+}
 
 #[derive(Component)]
-struct NumRows(usize);
+struct NumTileBoardRows(usize);
 
 #[derive(Component)]
-struct NumCols(usize);
+struct NumTileBoardCols(usize);
 
 #[derive(Component)]
 struct TileWidth(f32);
@@ -23,17 +53,25 @@ struct TileHeight(f32);
 #[derive(Component)]
 struct TileMargin(f32);
 
+#[derive(Component)]
+struct Tile;
+
+#[derive(Component)]
+struct TileBoardRow(usize);
+
+#[derive(Component)]
+struct TileBoardCol(usize);
+
 // Bundles ---------------------------------------------------------------------
 #[derive(Bundle)]
 struct TileBoardBundle {
     marker: TileBoard,
-    num_rows: NumRows,
-    num_cols: NumCols,
+    num_rows: NumTileBoardRows,
+    num_cols: NumTileBoardCols,
     tile_width: TileWidth,
     tile_height: TileHeight,
     tile_margin: TileMargin,
 }
-
 impl TileBoardBundle {
     pub fn new(
         num_rows: usize,
@@ -60,13 +98,23 @@ impl TileBoardBundle {
 
         Ok(Self {
             marker: TileBoard,
-            num_rows: NumRows(num_rows),
-            num_cols: NumCols(num_cols),
+            num_rows: NumTileBoardRows(num_rows),
+            num_cols: NumTileBoardCols(num_cols),
             tile_width: TileWidth(tile_width),
             tile_height: TileHeight(tile_height),
             tile_margin: TileMargin(tile_margin),
         })
     }
+}
+
+#[derive(Bundle)]
+struct TileBundle {
+    marker: Tile,
+    row: TileBoardRow,
+    col: TileBoardCol,
+    width: TileWidth,
+    height: TileHeight,
+    margin: TileMargin,
 }
 
 // Main ------------------------------------------------------------------------
