@@ -1,5 +1,6 @@
 use bevy::{
     prelude::*,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
     ecs::component::{ComponentHooks, StorageType},
 };
 use itertools::iproduct;
@@ -21,9 +22,33 @@ impl Component for TileBoard {
             let tile_width = world.get::<TileWidth>(entity).unwrap().0;
             let tile_height = world.get::<TileHeight>(entity).unwrap().0;
             let tile_margin = world.get::<TileMargin>(entity).unwrap().0;
+
+            // let offset_x = num_cols as f32 / 2. - 0.5;
+            // let get_x_pos = | col: f32 | -> f32 {
+            //     return (col - offset_x) * (tile_width + tile_margin);
+            // };
+
+            // let offset_y = num_rows as f32 / 2. - 0.5;
+            // let get_y_pos = | row: f32 | -> f32 {
+            //     return (offset_y - row) * (tile_height + tile_margin);
+            // };
+
+            let num_tiles = num_rows * num_cols;
+            let get_hue = | row: f32, col: f32 | -> f32 {
+                return 720. * (row + col) / num_tiles as f32;
+            };
+
+            // let meshes = world.resource_mut::<Assets<Mesh>>();
+            // let materials = world.resource_mut::<Assets<ColorMaterial>>();
+
             world.commands().entity(entity)
                 .with_children(|parent| {
                     for (col, row) in iproduct!(0..num_cols, 0..num_rows) {
+                        // let color = Color::hsl(get_hue(row as f32, col as f32), 0.95, 0.7);
+                        // let rect = Rectangle::new(tile_width, tile_height);
+                        // let x_pos = get_x_pos(col as f32);
+                        // let y_pos = get_y_pos(row as f32);
+
                         parent.spawn(TileBundle{
                             marker: Tile,
                             row: TileBoardRow(row),
@@ -31,6 +56,14 @@ impl Component for TileBoard {
                             width: TileWidth(tile_width),
                             height: TileHeight(tile_height),
                             margin: TileMargin(tile_margin),
+                            color: TileColor(Color::hsl(get_hue(row as f32, col as f32), 0.95, 0.7)),
+                            sprite: MaterialMesh2dBundle::default(),
+                            // sprite: MaterialMesh2dBundle {
+                            //     material: materials.add(color),
+                            //     mesh: Mesh2dHandle(meshes.add(rect)),
+                            //     transform: Transform::from_xyz(x_pos, y_pos, 0.),
+                            //     ..default()
+                            // },
                         });
                     }
                 });
@@ -62,6 +95,9 @@ struct TileBoardRow(usize);
 #[derive(Component)]
 struct TileBoardCol(usize);
 
+#[derive(Component)]
+struct TileColor(Color);
+
 // Bundles ---------------------------------------------------------------------
 #[derive(Bundle)]
 struct TileBoardBundle {
@@ -71,6 +107,7 @@ struct TileBoardBundle {
     tile_width: TileWidth,
     tile_height: TileHeight,
     tile_margin: TileMargin,
+    sprite: MaterialMesh2dBundle<ColorMaterial>,
 }
 impl TileBoardBundle {
     pub fn new(
@@ -103,6 +140,7 @@ impl TileBoardBundle {
             tile_width: TileWidth(tile_width),
             tile_height: TileHeight(tile_height),
             tile_margin: TileMargin(tile_margin),
+            sprite: MaterialMesh2dBundle::default(),
         })
     }
 }
@@ -115,6 +153,8 @@ struct TileBundle {
     width: TileWidth,
     height: TileHeight,
     margin: TileMargin,
+    color: TileColor,
+    sprite: MaterialMesh2dBundle<ColorMaterial>,
 }
 
 // Main ------------------------------------------------------------------------
@@ -130,6 +170,7 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, startup)
+        .add_systems(Update, render_tile_board)
         .run();
 }
 
@@ -139,4 +180,10 @@ fn startup(mut commands: Commands) {
 
     // https://bevyengine.org/news/bevy-0-14/#component-lifecycle-hooks
     commands.spawn(TileBoardBundle::new(3, 3, 100., 100., 10.).unwrap());
+}
+
+fn render_tiles(
+    tiles: 
+) {
+    //
 }
