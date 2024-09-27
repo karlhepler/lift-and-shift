@@ -22,7 +22,6 @@ struct Cell {
 }
 impl Board {
     fn new(rows: usize, cols: usize, cell_size: f32) -> Self {
-        let mut cells = Vec::new();
         let width = cols as f32 * cell_size;
         let height = rows as f32 * cell_size;
         let half_cell_size = cell_size / 2.;
@@ -30,6 +29,8 @@ impl Board {
         let half_height = height / 2.;
         let offset_x = half_width - half_cell_size;
         let offset_y = half_height - half_cell_size;
+
+        let mut cells = Vec::new();
 
         for row in 0..rows {
             let mut row_vec = Vec::new();
