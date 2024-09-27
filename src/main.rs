@@ -18,7 +18,7 @@ struct Board {
 struct Cell {
     x: f32,
     y: f32,
-    tile_entity: Option<Entity>,
+    occupied_by: Option<Entity>,
 }
 impl Board {
     fn new(rows: usize, cols: usize, cell_size: f32) -> Self {
@@ -37,7 +37,7 @@ impl Board {
             for col in 0..cols {
                 let x = col as f32 * cell_size - offset_x;
                 let y = (row as f32 * cell_size - offset_y) * -1.;
-                row_vec.push(Cell { x, y, tile_entity: None });
+                row_vec.push(Cell { x, y, occupied_by: None });
             }
             cells.push(row_vec);
         }
@@ -103,7 +103,7 @@ fn startup(
 
 fn on_add_board(
     trigger: Trigger<OnAdd, Board>,
-    query: Query<&Board>,
+    mut query: Query<&mut Board>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -127,10 +127,10 @@ fn on_add_board(
         Transform::from_xyz(x, y, 1.)
     };
 
-    if let Ok(board) = query.get(trigger.entity()) {
-        for (row, row_cells) in board.cells.iter().enumerate() {
-            for (col, cell) in row_cells.iter().enumerate() {
-                info!("{:?}", cell);
+    if let Ok(mut board) = query.get_mut(trigger.entity()) {
+        for (row, row_cells) in board.cells.iter_mut().enumerate() {
+            for (col, cell) in row_cells.iter_mut().enumerate() {
+                // spawn tile entity
                 let tile_entity = commands.spawn(TileBundle {
                     tile: Tile,
                     sprite: MaterialMesh2dBundle {
@@ -140,6 +140,10 @@ fn on_add_board(
                         ..default()
                     },
                 }).id();
+                // add tile entity as child to board entity
+                commands.entity(trigger.entity()).push_children(&[tile_entity]);
+                // cell is occupied by the tile entity
+                cell.occupied_by = Some(tile_entity);
             }
         }
     }
