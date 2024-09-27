@@ -14,25 +14,29 @@ const WINDOW_HEIGHT: f32 = 2556./2.5; // reduced resolution for iphone 14 pro
 struct Board {
     cells: Vec<Vec<Cell>>,
 }
-
 #[derive(Debug)]
 struct Cell {
     x: f32,
     y: f32,
-    tile: Option<Entity>,
+    tile_entity: Option<Entity>,
 }
-
 impl Board {
     fn new(rows: usize, cols: usize, cell_size: f32) -> Self {
         let mut cells = Vec::new();
+        let width = cols as f32 * cell_size;
+        let height = rows as f32 * cell_size;
+        let half_cell_size = cell_size / 2.;
+        let half_width = width / 2.;
+        let half_height = height / 2.;
+        let offset_x = half_width - half_cell_size;
+        let offset_y = half_height - half_cell_size;
 
         for row in 0..rows {
             let mut row_vec = Vec::new();
             for col in 0..cols {
-                let x = col as f32 * cell_size;
-                let y = row as f32 * cell_size;
-
-                row_vec.push(Cell { x, y, tile: None });
+                let x = col as f32 * cell_size - offset_x;
+                let y = (row as f32 * cell_size - offset_y) * -1.;
+                row_vec.push(Cell { x, y, tile_entity: None });
             }
             cells.push(row_vec);
         }
@@ -50,25 +54,11 @@ struct BoardBundle {
     board: Board,
     sprite: MaterialMesh2dBundle<ColorMaterial>,
 }
-impl BoardBundle {
-    pub fn new(board: Board) -> Self {
-        Self {
-            board,
-            sprite: MaterialMesh2dBundle::default(),
-        }
-    }
-}
 
 #[derive(Bundle)]
 struct TileBundle {
     tile: Tile,
     sprite: MaterialMesh2dBundle<ColorMaterial>,
-}
-
-impl TileBundle {
-    fn new() -> Self {
-        //
-    }
 }
 
 // Main ------------------------------------------------------------------------
@@ -89,24 +79,65 @@ fn main() {
 }
 
 // Systems ---------------------------------------------------------------------
-fn startup(mut commands: Commands) {
+fn startup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     commands.spawn(Camera2dBundle::default());
 
-    // https://bevyengine.org/news/bevy-0-14/#component-lifecycle-hooks
-    commands.spawn(BoardBundle::new(Board::new(3, 3, 120.)));
+    let rows = 3;
+    let cols = 3;
+    let cell_size = 110.;
+    commands.spawn(BoardBundle {
+        board: Board::new(rows, cols, cell_size),
+        sprite: MaterialMesh2dBundle {
+            mesh: Mesh2dHandle(meshes.add(Rectangle::new(cols as f32 * cell_size, rows as f32 * cell_size))),
+            material: materials.add(Color::srgb(0.5, 0.5, 0.5)),
+            transform: Transform::from_xyz(0., 0., 0.),
+            ..default()
+        },
+    });
 }
 
 fn on_add_board(
     trigger: Trigger<OnAdd, Board>,
-    mut board_query: Query<&mut Board>,
+    query: Query<&Board>,
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if let Ok(mut board) = query.get(trigger.entity()) {
-        for row in board.cells.iter_mut() {
-            for col in row.iter_mut() {
+    let tile_width = 100.;
+    let tile_height = 100.;
+
+    let mut new_mesh = | width, height: f32 | -> Mesh2dHandle {
+        let rect = Rectangle::new(width, height);
+        let handle = meshes.add(rect);
+        Mesh2dHandle(handle)
+    };
+
+    let mut new_material = | row, col: usize | -> Handle<ColorMaterial> {
+        let hue = (row + col) as f32 * 50.;
+        let color = Color::hsl(hue, 0.95, 0.7);
+        materials.add(color)
+    };
+
+    let new_transform = | x, y: f32 | -> Transform {
+        Transform::from_xyz(x, y, 1.)
+    };
+
+    if let Ok(board) = query.get(trigger.entity()) {
+        for (row, row_cells) in board.cells.iter().enumerate() {
+            for (col, cell) in row_cells.iter().enumerate() {
+                info!("{:?}", cell);
                 let tile_entity = commands.spawn(TileBundle {
                     tile: Tile,
-                    sprite: MaterialMesh2dBundle::default(),
+                    sprite: MaterialMesh2dBundle {
+                        mesh: new_mesh(tile_width, tile_height),
+                        material: new_material(row, col),
+                        transform: new_transform(cell.x, cell.y),
+                        ..default()
+                    },
                 }).id();
             }
         }
